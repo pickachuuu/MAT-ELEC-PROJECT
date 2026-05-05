@@ -109,7 +109,7 @@ newton_method <- function(func_text, derivative_text, x0, tolerance, max_iter) {
 
     if (abs(dfx) < near_zero_derivative) {
       status <- "Derivative near zero"
-      message <- "Newton's Method cannot continue because f'(x_n) is too close to zero."
+      message <- "Newton's Method cannot continue because the derivative at the current estimate is too close to zero."
       rows[[iteration]] <- data.frame(
         Iteration = row_index,
         x_n = x_current,
@@ -177,12 +177,19 @@ newton_method <- function(func_text, derivative_text, x0, tolerance, max_iter) {
   )
 }
 
-format_number <- function(value, digits = 8) {
+format_number <- function(value, digits = 5) {
   if (length(value) == 0 || is.na(value) || !is.finite(value)) {
     return("Not available")
   }
 
-  formatC(value, format = "fg", digits = digits)
+  rounded <- round(value, digits)
+
+  if (abs(rounded) >= 1e6 || abs(value) < 1e-5 && value != 0) {
+    return(formatC(value, format = "e", digits = digits))
+  }
+
+  pretty <- formatC(rounded, format = "f", digits = digits)
+  sub("\\.?0+$", "", pretty)
 }
 
 metric_box <- function(label, value) {
@@ -213,16 +220,17 @@ ui <- fluidPage(
     ),
     tags$style(HTML("
       :root {
-        --ink: #18212f;
-        --muted: #667085;
-        --line: #d9e2ec;
+        --ink: #172322;
+        --muted: #60706d;
+        --line: #d7e3df;
         --panel: #ffffff;
-        --paper: #f4f7f4;
-        --accent: #157f73;
-        --accent-dark: #0d5f57;
-        --accent-soft: #e5f5f1;
-        --warning: #0d5f57;
-        --danger: #0d5f57;
+        --paper: #f6f9f7;
+        --accent: #147565;
+        --accent-dark: #0b4f45;
+        --accent-soft: #eaf6f2;
+        --accent-line: #b9ddd4;
+        --surface: #fbfdfc;
+        --shadow: 0 16px 42px rgba(23, 35, 34, 0.08);
       }
 
       * {
@@ -237,49 +245,49 @@ ui <- fluidPage(
       body {
         margin: 0;
         color: var(--ink);
-        background:
-          linear-gradient(180deg, #eef7f1 0, var(--paper) 250px, #f8faf7 100%);
+        background: var(--paper);
         font-family: Inter, Arial, sans-serif;
       }
 
       .container-fluid {
-        max-width: 1240px;
-        padding: 22px 24px;
+        max-width: 1280px;
+        padding: 20px 24px;
         min-height: 100vh;
       }
 
       .app-shell {
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
-        gap: 18px;
-        min-height: calc(100vh - 44px);
+        gap: 14px;
+        min-height: calc(100vh - 40px);
       }
 
       .hero {
         position: relative;
         overflow: hidden;
-        background:
-          linear-gradient(135deg, #123c3a 0%, #0f5b53 57%, #186a5f 100%);
-        color: #ffffff;
-        border: 1px solid rgba(255,255,255,0.12);
+        background: var(--panel);
+        color: var(--ink);
+        border: 1px solid var(--line);
         border-radius: 8px;
-        padding: 24px;
-        box-shadow: 0 18px 45px rgba(15, 69, 64, 0.18);
+        padding: 18px 20px;
+        box-shadow: var(--shadow);
       }
 
-      .hero::after {
+      .hero::before {
         content: '';
         position: absolute;
-        inset: 0;
-        background:
-          linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
-          linear-gradient(180deg, rgba(255,255,255,0.06) 1px, transparent 1px);
-        background-size: 34px 34px;
-        opacity: 0.22;
-        pointer-events: none;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 4px;
+        background: var(--accent);
       }
 
       .hero-content {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
         position: relative;
         z-index: 1;
       }
@@ -287,7 +295,8 @@ ui <- fluidPage(
       .hero-kicker {
         display: inline-flex;
         align-items: center;
-        margin-bottom: 10px;
+        width: fit-content;
+        margin-bottom: 8px;
         padding: 5px 10px;
         border-radius: 999px;
         color: #0d5f57;
@@ -298,15 +307,16 @@ ui <- fluidPage(
       }
 
       .hero h1 {
-        margin: 0 0 7px;
-        font-size: 34px;
+        margin: 0 0 5px;
+        font-size: 28px;
         font-weight: 700;
+        letter-spacing: 0;
       }
 
       .hero p {
-        max-width: 760px;
+        max-width: 720px;
         margin: 0;
-        color: #d8ebe7;
+        color: var(--muted);
         font-size: 15px;
         line-height: 1.55;
       }
@@ -315,17 +325,19 @@ ui <- fluidPage(
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-top: 16px;
+        justify-content: flex-end;
+        max-width: 520px;
+        margin-top: 0;
       }
 
       .hero-chip {
         display: inline-flex;
         align-items: center;
-        min-height: 32px;
-        padding: 6px 11px;
-        color: #eaf8f5;
-        background: rgba(255,255,255,0.13);
-        border: 1px solid rgba(255,255,255,0.20);
+        min-height: 30px;
+        padding: 5px 10px;
+        color: var(--accent-dark);
+        background: var(--accent-soft);
+        border: 1px solid var(--accent-line);
         border-radius: 999px;
         font-size: 12px;
         font-weight: 700;
@@ -333,8 +345,8 @@ ui <- fluidPage(
 
       .layout {
         display: grid;
-        grid-template-columns: 320px minmax(0, 1fr);
-        gap: 18px;
+        grid-template-columns: 310px minmax(0, 1fr);
+        gap: 14px;
         align-items: stretch;
         min-height: 0;
       }
@@ -345,22 +357,22 @@ ui <- fluidPage(
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 8px;
-        box-shadow: 0 10px 28px rgba(24, 33, 47, 0.06);
+        box-shadow: var(--shadow);
       }
 
       .control-panel {
         position: sticky;
-        top: 18px;
+        top: 16px;
         align-self: start;
-        padding: 18px;
-        border-top: 5px solid var(--accent);
+        padding: 16px;
+        border-top: 4px solid var(--accent);
       }
 
       .control-panel h2,
       .content-panel h2,
       .intro-panel h2 {
         margin: 0 0 12px;
-        font-size: 18px;
+        font-size: 17px;
         font-weight: 700;
       }
 
@@ -375,7 +387,7 @@ ui <- fluidPage(
       }
 
       .form-group {
-        margin-bottom: 13px;
+        margin-bottom: 12px;
       }
 
       label {
@@ -385,11 +397,11 @@ ui <- fluidPage(
       }
 
       .form-control {
-        height: 38px;
-        border-color: #cad6df;
+        height: 40px;
+        border-color: var(--line);
         border-radius: 6px;
         box-shadow: none;
-        background: #fcfdfb;
+        background: #ffffff;
       }
 
       .form-control:focus {
@@ -400,7 +412,7 @@ ui <- fluidPage(
       .btn-primary {
         width: 100%;
         margin-top: 4px;
-        min-height: 42px;
+        min-height: 44px;
         background: var(--accent);
         border-color: var(--accent);
         border-radius: 6px;
@@ -416,10 +428,10 @@ ui <- fluidPage(
 
       .input-note {
         margin: 12px 0 0;
-        padding: 10px 11px;
+        padding: 11px 12px;
         color: #405060;
         background: var(--accent-soft);
-        border: 1px solid #c8e8df;
+        border: 1px solid var(--accent-line);
         border-left: 4px solid var(--accent);
         border-radius: 6px;
         font-size: 12px;
@@ -442,30 +454,40 @@ ui <- fluidPage(
       }
 
       .nav-tabs {
-        padding: 12px 14px 0;
-        background: #f9fbf8;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 12px 14px;
+        background: var(--surface);
         border-bottom: 1px solid var(--line);
+      }
+
+      .nav-tabs::before,
+      .nav-tabs::after {
+        display: none;
       }
 
       .nav-tabs > li > a {
         color: #445265;
-        border-radius: 6px 6px 0 0;
+        margin-right: 0;
+        border-radius: 999px;
         font-weight: 650;
         border: 1px solid transparent;
+        padding: 8px 12px;
       }
 
       .nav-tabs > li > a:hover {
         color: var(--accent-dark);
         background: var(--accent-soft);
-        border-color: #c8e8df;
+        border-color: var(--accent-line);
       }
 
       .nav-tabs > li.active > a,
       .nav-tabs > li.active > a:focus,
       .nav-tabs > li.active > a:hover {
-        color: var(--accent-dark);
-        border-color: var(--line);
-        border-bottom-color: #ffffff;
+        color: #ffffff;
+        background: var(--accent);
+        border-color: var(--accent);
       }
 
       .tab-content {
@@ -473,6 +495,7 @@ ui <- fluidPage(
         flex: 1;
         min-height: 0;
         padding: 18px;
+        background: #ffffff;
       }
 
       .tab-content > .tab-pane {
@@ -526,14 +549,14 @@ ui <- fluidPage(
       .metric-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 10px;
+        gap: 12px;
         margin-bottom: 18px;
       }
 
       .metric-box {
-        min-height: 88px;
-        padding: 13px;
-        background: #fbfcfb;
+        min-height: 94px;
+        padding: 15px;
+        background: var(--surface);
         border: 1px solid #e1e8df;
         border-radius: 8px;
         position: relative;
@@ -562,7 +585,7 @@ ui <- fluidPage(
       .metric-value {
         display: block;
         color: var(--ink);
-        font-size: 19px;
+        font-size: 20px;
         font-weight: 750;
         word-break: break-word;
       }
@@ -576,7 +599,7 @@ ui <- fluidPage(
 
       .method-note {
         color: #435366;
-        background: linear-gradient(90deg, var(--accent-soft), #fbfcfb);
+        background: var(--accent-soft);
         border: 1px solid #d4e8e0;
         border-left: 4px solid var(--accent);
       }
@@ -590,6 +613,7 @@ ui <- fluidPage(
 
       .intro-panel {
         padding: 18px;
+        box-shadow: none;
       }
 
       .intro-grid {
@@ -600,7 +624,7 @@ ui <- fluidPage(
 
       .intro-section {
         padding: 14px;
-        background: #fbfcfb;
+        background: var(--surface);
         border: 1px solid #e1e8df;
         border-radius: 8px;
         border-top: 4px solid var(--accent);
@@ -636,14 +660,14 @@ ui <- fluidPage(
       .steps-wrap {
         display: grid;
         gap: 10px;
-        max-height: 560px;
+        max-height: calc(100vh - 245px);
         overflow-y: auto;
         padding-right: 4px;
       }
 
       .step-box {
         padding: 13px 14px;
-        background: #fbfcfb;
+        background: var(--surface);
         border: 1px solid #e1e8df;
         border-left: 4px solid var(--accent);
         border-radius: 8px;
@@ -656,15 +680,18 @@ ui <- fluidPage(
         font-weight: 750;
       }
 
-      .step-box pre {
-        margin: 0;
-        padding: 0;
+      .math-line {
+        margin: 5px 0;
         color: #263342;
-        background: transparent;
-        border: 0;
-        white-space: pre-wrap;
+        font-size: 15px;
+        line-height: 1.45;
+      }
+
+      .math-note {
+        margin-top: 7px;
+        color: var(--muted);
         font-size: 13px;
-        line-height: 1.5;
+        line-height: 1.45;
       }
 
       .plot-caption {
@@ -681,6 +708,14 @@ ui <- fluidPage(
         .layout,
         .intro-grid {
           grid-template-columns: 1fr;
+        }
+
+        .hero-content {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-highlights {
+          justify-content: flex-start;
         }
 
         .control-panel {
@@ -722,7 +757,10 @@ ui <- fluidPage(
         ),
         div(
           class = "hero-highlights",
-          span(class = "hero-chip", "x[n+1] = x[n] - f(x[n]) / f'(x[n])"),
+          span(
+            class = "hero-chip",
+            HTML("x<sub>n+1</sub> = x<sub>n</sub> - f(x<sub>n</sub>) / f'(x<sub>n</sub>)")
+          ),
           span(class = "hero-chip", "Iteration table"),
           span(class = "hero-chip", "Tangent graph"),
           span(class = "hero-chip", "Auto derivative option")
@@ -746,7 +784,7 @@ ui <- fluidPage(
         ),
         numericInput(
           "x0",
-          "Initial estimate x0",
+          HTML("Initial estimate x<sub>0</sub>"),
           value = 2,
           step = 0.1
         ),
@@ -771,8 +809,10 @@ ui <- fluidPage(
         ),
         div(
           class = "input-note",
-          "Use R syntax: 2*x, sin(x), cos(x), exp(x), log(x), sqrt(x), ",
-          "and x^2. Leave the derivative blank to estimate it automatically."
+          HTML(
+            "Use R syntax: 2*x, sin(x), cos(x), exp(x), log(x), sqrt(x), ",
+            "and x<sup>2</sup>. Leave the derivative blank to estimate it automatically."
+          )
         )
       ),
       div(
@@ -784,7 +824,7 @@ ui <- fluidPage(
             div(
               class = "method-note",
               strong("Method note: "),
-              "Newton's Method uses the tangent line at x_n to choose the ",
+              HTML("Newton's Method uses the tangent line at x<sub>n</sub> to choose the "),
               "next approximation. It is fast near a simple root, but it can ",
               "fail when the derivative is zero or the initial estimate is poor."
             )
@@ -812,10 +852,12 @@ ui <- fluidPage(
               class = "intro-panel",
               h2("Newton's Method"),
               p(
-                "Newton's Method is an iterative technique for approximating ",
-                "a root of f(x) = 0. Starting from x0, each step follows the ",
-                "tangent line at the current point and uses where that tangent ",
-                "crosses the x-axis as the next estimate."
+                HTML(
+                  "Newton's Method is an iterative technique for approximating ",
+                  "a root of f(x) = 0. Starting from x<sub>0</sub>, each step follows the ",
+                  "tangent line at the current point and uses where that tangent ",
+                  "crosses the x-axis as the next estimate."
+                )
               ),
               withMathJax(
                 div(
@@ -838,9 +880,11 @@ ui <- fluidPage(
                   class = "intro-section",
                   h3("Error Estimate"),
                   p(
-                    "A practical stopping rule is based on the change between ",
-                    "successive estimates: abs(x_{n+1} - x_n). Relative error ",
-                    "uses that change divided by abs(x_{n+1})."
+                    HTML(
+                      "A practical stopping rule is based on the change between ",
+                      "successive estimates: |x<sub>n+1</sub> - x<sub>n</sub>|. Relative error ",
+                      "uses that change divided by |x<sub>n+1</sub>|."
+                    )
                   )
                 ),
                 div(
@@ -849,15 +893,17 @@ ui <- fluidPage(
                   tags$ul(
                     tags$li("Write multiplication explicitly: 2*x, not 2x."),
                     tags$li("Use functions like sin(x), cos(x), exp(x), and log(x)."),
-                    tags$li("Use powers with ^, such as x^6.")
+                    tags$li(HTML("Use powers with ^, such as x<sup>6</sup>."))
                   )
                 ),
                 div(
                   class = "intro-section",
                   h3("Default Example"),
                   p(
-                    "The app starts with f(x) = x^6 - x - 1 and x0 = 2, ",
-                    "matching the reference example. It converges near 1.134724."
+                    HTML(
+                      "The app starts with f(x) = x<sup>6</sup> - x - 1 and x<sub>0</sub> = 2, ",
+                      "matching the reference example. It converges near 1.13472."
+                    )
                   )
                 )
               )
@@ -928,9 +974,9 @@ server <- function(input, output, session) {
       ),
       div(
         class = "metric-grid",
-        metric_box("Root estimate", format_number(root_estimate, 10)),
-        metric_box("f(root)", format_number(final_fx, 8)),
-        metric_box("Approx. error", format_number(final_row$Approximate_Error, 8)),
+        metric_box("Root estimate", format_number(root_estimate)),
+        metric_box("f(root)", format_number(final_fx)),
+        metric_box("Approx. error", format_number(final_row$Approximate_Error)),
         metric_box("Derivative mode", result$derivative_source)
       )
     )
@@ -943,10 +989,10 @@ server <- function(input, output, session) {
     display <- result$data
     names(display) <- c(
       "Iteration",
-      "x_n",
-      "f(x_n)",
-      "f'(x_n)",
-      "x_{n+1}",
+      "x<sub>n</sub>",
+      "f(x<sub>n</sub>)",
+      "f'(x<sub>n</sub>)",
+      "x<sub>n+1</sub>",
       "Approximate Error",
       "Relative Error"
     )
@@ -954,6 +1000,7 @@ server <- function(input, output, session) {
     DT::datatable(
       display,
       class = "stripe hover compact cell-border",
+      escape = FALSE,
       rownames = FALSE,
       options = list(
         pageLength = 10,
@@ -963,8 +1010,8 @@ server <- function(input, output, session) {
       )
     ) |>
       DT::formatRound(
-        columns = c("x_n", "f(x_n)", "f'(x_n)", "x_{n+1}", "Approximate Error", "Relative Error"),
-        digits = 8
+        columns = 2:7,
+        digits = 5
       )
   })
 
@@ -978,37 +1025,76 @@ server <- function(input, output, session) {
     rows <- result$data
     step_nodes <- lapply(seq_len(nrow(rows)), function(i) {
       row <- rows[i, ]
+      current_index <- row$Iteration
+      next_index <- current_index + 1
 
       if (!is.finite(row$x_next)) {
-        text <- paste0(
-          "x_", row$Iteration, " = ", format_number(row$x_n, 10), "\n",
-          "f(x_", row$Iteration, ") = ", format_number(row$f_x_n, 10), "\n",
-          "f'(x_", row$Iteration, ") = ", format_number(row$f_prime_x_n, 10), "\n",
-          "The update cannot be computed because the derivative is too close to zero."
+        step_body <- tagList(
+          div(
+            class = "math-line",
+            paste0("\\(x_{", current_index, "} = ", format_number(row$x_n), "\\)")
+          ),
+          div(
+            class = "math-line",
+            paste0("\\(f(x_{", current_index, "}) = ", format_number(row$f_x_n), "\\)")
+          ),
+          div(
+            class = "math-line",
+            paste0("\\(f'(x_{", current_index, "}) = ", format_number(row$f_prime_x_n), "\\)")
+          ),
+          div(
+            class = "math-note",
+            "The update cannot be computed because the derivative is too close to zero."
+          )
         )
       } else {
-        text <- paste0(
-          "x_", row$Iteration, " = ", format_number(row$x_n, 10), "\n",
-          "f(x_", row$Iteration, ") = ", format_number(row$f_x_n, 10), "\n",
-          "f'(x_", row$Iteration, ") = ", format_number(row$f_prime_x_n, 10), "\n",
-          "x_", row$Iteration + 1, " = x_", row$Iteration,
-          " - f(x_", row$Iteration, ") / f'(x_", row$Iteration, ")\n",
-          "x_", row$Iteration + 1, " = ", format_number(row$x_n, 10),
-          " - (", format_number(row$f_x_n, 10), ") / (",
-          format_number(row$f_prime_x_n, 10), ")\n",
-          "x_", row$Iteration + 1, " = ", format_number(row$x_next, 10), "\n",
-          "Approximate error = ", format_number(row$Approximate_Error, 10)
+        step_body <- tagList(
+          div(
+            class = "math-line",
+            paste0("\\(x_{", current_index, "} = ", format_number(row$x_n), "\\)")
+          ),
+          div(
+            class = "math-line",
+            paste0("\\(f(x_{", current_index, "}) = ", format_number(row$f_x_n), "\\)")
+          ),
+          div(
+            class = "math-line",
+            paste0("\\(f'(x_{", current_index, "}) = ", format_number(row$f_prime_x_n), "\\)")
+          ),
+          div(
+            class = "math-line",
+            paste0(
+              "\\(x_{", next_index, "} = x_{", current_index,
+              "} - \\frac{f(x_{", current_index, "})}{f'(x_{", current_index, "})}\\)"
+            )
+          ),
+          div(
+            class = "math-line",
+            paste0(
+              "\\(x_{", next_index, "} = ", format_number(row$x_n),
+              " - \\frac{", format_number(row$f_x_n), "}{",
+              format_number(row$f_prime_x_n), "}\\)"
+            )
+          ),
+          div(
+            class = "math-line",
+            paste0("\\(x_{", next_index, "} = ", format_number(row$x_next), "\\)")
+          ),
+          div(
+            class = "math-line",
+            paste0("\\(\\left|x_{", next_index, "} - x_{", current_index, "}\\right| = ", format_number(row$Approximate_Error), "\\)")
+          )
         )
       }
 
       div(
         class = "step-box",
-        h4(paste("Iteration", row$Iteration)),
-        tags$pre(text)
+        h4(paste("Iteration", current_index)),
+        step_body
       )
     })
 
-    div(class = "steps-wrap", step_nodes)
+    withMathJax(div(class = "steps-wrap", step_nodes))
   })
 
   output$function_plot <- renderPlot({
