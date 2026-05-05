@@ -172,7 +172,8 @@ newton_method <- function(func_text, derivative_text, x0, tolerance, max_iter) {
     message = message,
     f = f,
     derivative_source = derivative_source,
-    tolerance = tolerance
+    tolerance = tolerance,
+    x0 = x0
   )
 }
 
@@ -216,46 +217,89 @@ ui <- fluidPage(
         --muted: #667085;
         --line: #d9e2ec;
         --panel: #ffffff;
-        --paper: #f5f7f4;
+        --paper: #f4f7f4;
         --accent: #157f73;
         --accent-dark: #0d5f57;
         --accent-soft: #e5f5f1;
-        --warning: #a15c16;
-        --danger: #a33131;
+        --warning: #0d5f57;
+        --danger: #0d5f57;
       }
 
       * {
         box-sizing: border-box;
       }
 
+      html,
+      body {
+        min-height: 100%;
+      }
+
       body {
         margin: 0;
         color: var(--ink);
-        background: var(--paper);
+        background:
+          linear-gradient(180deg, #eef7f1 0, var(--paper) 250px, #f8faf7 100%);
         font-family: Inter, Arial, sans-serif;
       }
 
       .container-fluid {
         max-width: 1240px;
-        padding: 22px 24px 18px;
+        padding: 22px 24px;
+        min-height: 100vh;
       }
 
       .app-shell {
         display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
         gap: 18px;
+        min-height: calc(100vh - 44px);
       }
 
       .hero {
-        background: #123c3a;
+        position: relative;
+        overflow: hidden;
+        background:
+          linear-gradient(135deg, #123c3a 0%, #0f5b53 57%, #186a5f 100%);
         color: #ffffff;
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 8px;
-        padding: 22px 24px;
+        padding: 24px;
+        box-shadow: 0 18px 45px rgba(15, 69, 64, 0.18);
+      }
+
+      .hero::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
+          linear-gradient(180deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+        background-size: 34px 34px;
+        opacity: 0.22;
+        pointer-events: none;
+      }
+
+      .hero-content {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-kicker {
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        color: #0d5f57;
+        background: #e5f5f1;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
       }
 
       .hero h1 {
         margin: 0 0 7px;
-        font-size: 30px;
+        font-size: 34px;
         font-weight: 700;
       }
 
@@ -267,11 +311,32 @@ ui <- fluidPage(
         line-height: 1.55;
       }
 
+      .hero-highlights {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .hero-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 6px 11px;
+        color: #eaf8f5;
+        background: rgba(255,255,255,0.13);
+        border: 1px solid rgba(255,255,255,0.20);
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
       .layout {
         display: grid;
         grid-template-columns: 320px minmax(0, 1fr);
         gap: 18px;
-        align-items: start;
+        align-items: stretch;
+        min-height: 0;
       }
 
       .control-panel,
@@ -280,12 +345,15 @@ ui <- fluidPage(
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 8px;
+        box-shadow: 0 10px 28px rgba(24, 33, 47, 0.06);
       }
 
       .control-panel {
         position: sticky;
         top: 18px;
+        align-self: start;
         padding: 18px;
+        border-top: 5px solid var(--accent);
       }
 
       .control-panel h2,
@@ -294,6 +362,16 @@ ui <- fluidPage(
         margin: 0 0 12px;
         font-size: 18px;
         font-weight: 700;
+      }
+
+      .control-panel h2::after {
+        content: '';
+        display: block;
+        width: 46px;
+        height: 3px;
+        margin-top: 9px;
+        background: var(--accent);
+        border-radius: 999px;
       }
 
       .form-group {
@@ -307,9 +385,11 @@ ui <- fluidPage(
       }
 
       .form-control {
+        height: 38px;
         border-color: #cad6df;
         border-radius: 6px;
         box-shadow: none;
+        background: #fcfdfb;
       }
 
       .form-control:focus {
@@ -320,10 +400,12 @@ ui <- fluidPage(
       .btn-primary {
         width: 100%;
         margin-top: 4px;
+        min-height: 42px;
         background: var(--accent);
         border-color: var(--accent);
         border-radius: 6px;
         font-weight: 700;
+        box-shadow: 0 8px 16px rgba(21, 127, 115, 0.20);
       }
 
       .btn-primary:hover,
@@ -336,8 +418,9 @@ ui <- fluidPage(
         margin: 12px 0 0;
         padding: 10px 11px;
         color: #405060;
-        background: #f8faf7;
-        border: 1px solid #e2e9e2;
+        background: var(--accent-soft);
+        border: 1px solid #c8e8df;
+        border-left: 4px solid var(--accent);
         border-radius: 6px;
         font-size: 12px;
         line-height: 1.45;
@@ -346,11 +429,21 @@ ui <- fluidPage(
       .content-panel {
         padding: 0;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .content-panel > .tabbable {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-height: 0;
       }
 
       .nav-tabs {
         padding: 12px 14px 0;
-        background: #fbfcfb;
+        background: #f9fbf8;
         border-bottom: 1px solid var(--line);
       }
 
@@ -358,6 +451,13 @@ ui <- fluidPage(
         color: #445265;
         border-radius: 6px 6px 0 0;
         font-weight: 650;
+        border: 1px solid transparent;
+      }
+
+      .nav-tabs > li > a:hover {
+        color: var(--accent-dark);
+        background: var(--accent-soft);
+        border-color: #c8e8df;
       }
 
       .nav-tabs > li.active > a,
@@ -369,8 +469,19 @@ ui <- fluidPage(
       }
 
       .tab-content {
+        display: flex;
+        flex: 1;
+        min-height: 0;
         padding: 18px;
-        min-height: 560px;
+      }
+
+      .tab-content > .tab-pane {
+        width: 100%;
+      }
+
+      .tab-content > .active {
+        display: flex;
+        flex-direction: column;
       }
 
       .status-line {
@@ -389,6 +500,7 @@ ui <- fluidPage(
         border-radius: 999px;
         font-size: 13px;
         font-weight: 750;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45);
       }
 
       .status-converged {
@@ -398,12 +510,12 @@ ui <- fluidPage(
 
       .status-warning {
         color: var(--warning);
-        background: #fff2df;
+        background: #eef8f5;
       }
 
       .status-error {
         color: var(--danger);
-        background: #fdeaea;
+        background: #eef8f5;
       }
 
       .status-detail {
@@ -424,6 +536,18 @@ ui <- fluidPage(
         background: #fbfcfb;
         border: 1px solid #e1e8df;
         border-radius: 8px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .metric-box::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 4px;
+        background: var(--accent);
       }
 
       .metric-label {
@@ -438,7 +562,7 @@ ui <- fluidPage(
       .metric-value {
         display: block;
         color: var(--ink);
-        font-size: 20px;
+        font-size: 19px;
         font-weight: 750;
         word-break: break-word;
       }
@@ -452,14 +576,15 @@ ui <- fluidPage(
 
       .method-note {
         color: #435366;
-        background: #f8faf7;
-        border: 1px solid #e2e9e2;
+        background: linear-gradient(90deg, var(--accent-soft), #fbfcfb);
+        border: 1px solid #d4e8e0;
+        border-left: 4px solid var(--accent);
       }
 
       .error-box {
         color: var(--danger);
-        background: #fdeaea;
-        border: 1px solid #facaca;
+        background: #eef8f5;
+        border: 1px solid #b8ddd4;
         font-weight: 650;
       }
 
@@ -478,6 +603,7 @@ ui <- fluidPage(
         background: #fbfcfb;
         border: 1px solid #e1e8df;
         border-radius: 8px;
+        border-top: 4px solid var(--accent);
       }
 
       .intro-section h3 {
@@ -521,6 +647,7 @@ ui <- fluidPage(
         border: 1px solid #e1e8df;
         border-left: 4px solid var(--accent);
         border-radius: 8px;
+        box-shadow: 0 6px 16px rgba(24, 33, 47, 0.04);
       }
 
       .step-box h4 {
@@ -546,13 +673,6 @@ ui <- fluidPage(
         font-size: 13px;
       }
 
-      footer {
-        color: var(--muted);
-        text-align: center;
-        font-size: 12px;
-        padding: 8px 0 2px;
-      }
-
       @media (max-width: 900px) {
         .container-fluid {
           padding: 14px;
@@ -565,6 +685,11 @@ ui <- fluidPage(
 
         .control-panel {
           position: static;
+        }
+
+        .app-shell,
+        .layout {
+          min-height: auto;
         }
 
         .metric-grid {
@@ -587,10 +712,21 @@ ui <- fluidPage(
     class = "app-shell",
     div(
       class = "hero",
-      h1("Newton's Method Solver"),
-      p(
-        "Explore how tangent-line approximations move from an initial ",
-        "estimate toward a root of a nonlinear equation."
+      div(
+        class = "hero-content",
+        span(class = "hero-kicker", "Numerical Analysis"),
+        h1("Newton's Method Solver"),
+        p(
+          "Explore how tangent-line approximations move from an initial ",
+          "estimate toward a root of a nonlinear equation."
+        ),
+        div(
+          class = "hero-highlights",
+          span(class = "hero-chip", "x[n+1] = x[n] - f(x[n]) / f'(x[n])"),
+          span(class = "hero-chip", "Iteration table"),
+          span(class = "hero-chip", "Tangent graph"),
+          span(class = "hero-chip", "Auto derivative option")
+        )
       )
     ),
     div(
@@ -729,9 +865,6 @@ ui <- fluidPage(
           )
         )
       )
-    ),
-    tags$footer(
-      "Numerical Analysis Project | Newton's Method"
     )
   )
 )
@@ -820,6 +953,7 @@ server <- function(input, output, session) {
 
     DT::datatable(
       display,
+      class = "stripe hover compact cell-border",
       rownames = FALSE,
       options = list(
         pageLength = 10,
@@ -927,7 +1061,7 @@ server <- function(input, output, session) {
       input$x0,
       scalar_value(result$f, input$x0, "f(x0)"),
       pch = 19,
-      col = "#a15c16",
+      col = "#0d5f57",
       cex = 1.2
     )
     points(root_estimate, 0, pch = 19, col = "#123c3a", cex = 1.3)
@@ -939,13 +1073,13 @@ server <- function(input, output, session) {
         is.finite(tangent_row$f_prime_x_n)) {
       tangent_y <- tangent_row$f_x_n +
         tangent_row$f_prime_x_n * (x_values - tangent_row$x_n)
-      lines(x_values, tangent_y, col = "#c7524a", lwd = 2, lty = 3)
+      lines(x_values, tangent_y, col = "#75b8ac", lwd = 2, lty = 3)
     }
 
     legend(
       "topright",
       legend = c("f(x)", "y = 0", "Initial estimate", "Root estimate", "Latest tangent"),
-      col = c("#157f73", "#606b78", "#a15c16", "#123c3a", "#c7524a"),
+      col = c("#157f73", "#606b78", "#0d5f57", "#123c3a", "#75b8ac"),
       lty = c(1, 2, NA, NA, 3),
       pch = c(NA, NA, 19, 19, NA),
       bty = "n",
