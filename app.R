@@ -200,6 +200,22 @@ metric_box <- function(label, value) {
   )
 }
 
+presets <- list(
+  custom    = list(label = "— Custom —"),
+  default   = list(label = "x⁶ − x − 1  (default)",          func = "x^6 - x - 1",       deriv = "6*x^5 - 1",         x0 = 2),
+  cosx      = list(label = "cos(x) − x",                      func = "cos(x) - x",        deriv = "-sin(x) - 1",        x0 = 1),
+  cubic     = list(label = "x³ − 2x − 5  (Burden & Faires)", func = "x^3 - 2*x - 5",     deriv = "3*x^2 - 2",          x0 = 2),
+  xexp      = list(label = "x − e^(−x)",                      func = "x - exp(-x)",       deriv = "1 + exp(-x)",        x0 = 0.5),
+  sqrt2     = list(label = "x² − 2  (√2)",                    func = "x^2 - 2",           deriv = "2*x",                x0 = 1.5),
+  fail_cyc  = list(label = "Failure: cycling",                func = "x^3 - 2*x + 2",     deriv = "3*x^2 - 2",          x0 = 0),
+  fail_zero = list(label = "Failure: f'(x₀) = 0",            func = "x^3",                deriv = "3*x^2",              x0 = 0),
+  fail_div  = list(label = "Failure: divergence (atan)",      func = "atan(x)",           deriv = "1/(1+x^2)",          x0 = 1.5)
+)
+
+preset_choices <- function() {
+  setNames(names(presets), vapply(presets, function(p) p$label, character(1)))
+}
+
 ui <- fluidPage(
   tags$head(
     tags$link(
@@ -1014,20 +1030,23 @@ ui <- fluidPage(
         color: var(--chalk) !important;
         background: transparent !important;
         border: none !important;
-        border-bottom: 1px dashed var(--chalk-faint) !important;
+        border-bottom: 1px dashed rgba(245, 241, 232, 0.22) !important;
         font-family: 'Patrick Hand', cursive !important;
-        font-size: 16px !important;
-        padding: 10px 14px !important;
+        font-size: 17px !important;
+        font-weight: 400 !important;
+        padding: 11px 14px !important;
+        letter-spacing: 0.2px;
       }
 
       table.dataTable tbody tr:hover td,
-      table.dataTable.hover tbody tr:hover {
-        background: rgba(244, 211, 94, 0.08) !important;
+      table.dataTable.hover tbody tr:hover td {
+        background: rgba(244, 211, 94, 0.10) !important;
+        color: #ffffff !important;
       }
 
       table.dataTable.stripe tbody tr.odd td,
       table.dataTable.display tbody tr.odd > .sorting_1 {
-        background: rgba(245,241,232,0.03) !important;
+        background: rgba(245,241,232,0.05) !important;
       }
 
       .dataTables_info, .dataTables_paginate, .dataTables_length, .dataTables_filter {
@@ -1037,31 +1056,135 @@ ui <- fluidPage(
         padding-top: 14px !important;
       }
 
-      .dataTables_paginate .paginate_button {
+      /* Pagination — three states: enabled, current, disabled.
+         Selectors match DataTables' built-in specificity (.dataTables_wrapper ...). */
+      .dataTables_wrapper .dataTables_paginate .paginate_button,
+      .dataTables_wrapper .dataTables_paginate .paginate_button:link,
+      .dataTables_wrapper .dataTables_paginate .paginate_button:visited {
         color: var(--chalk) !important;
         background: transparent !important;
-        border: 1.5px dashed var(--chalk-dim) !important;
+        background-image: none !important;
+        border: 1.5px solid var(--chalk-dim) !important;
         border-radius: 4px !important;
-        margin: 0 2px;
-        padding: 4px 10px !important;
+        margin: 0 3px;
+        padding: 5px 14px !important;
+        min-width: 36px;
+        text-align: center;
+        cursor: pointer;
+        font-family: 'Patrick Hand', cursive !important;
+        font-size: 16px !important;
+        text-decoration: none !important;
+        box-shadow: none !important;
+        transition: all 120ms;
       }
 
-      .dataTables_paginate .paginate_button.current,
-      .dataTables_paginate .paginate_button.current:hover {
+      .dataTables_wrapper .dataTables_paginate .paginate_button:not(.disabled):not(.current):hover,
+      .dataTables_wrapper .dataTables_paginate .paginate_button:not(.disabled):not(.current):active {
         color: var(--board-deep) !important;
         background: var(--chalk-yellow) !important;
-        border: 1.5px solid var(--chalk-yellow) !important;
-      }
-
-      .dataTables_paginate .paginate_button:hover {
-        color: var(--chalk-yellow) !important;
-        background: transparent !important;
+        background-image: none !important;
         border-color: var(--chalk-yellow) !important;
+        text-decoration: none !important;
       }
 
-      .dataTable .sorting:before, .dataTable .sorting:after,
-      .dataTable .sorting_asc:after, .dataTable .sorting_desc:before {
+      .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+      .dataTables_wrapper .dataTables_paginate .paginate_button.current:link,
+      .dataTables_wrapper .dataTables_paginate .paginate_button.current:visited,
+      .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover,
+      .dataTables_wrapper .dataTables_paginate .paginate_button.current:active {
+        color: var(--board-deep) !important;
+        background: var(--chalk-yellow) !important;
+        background-image: none !important;
+        border: 2px solid var(--board-deep) !important;
+        font-family: 'Caveat', cursive !important;
+        font-size: 22px !important;
+        font-weight: 700 !important;
+        line-height: 1;
+        box-shadow: 2px 2px 0 0 rgba(245, 241, 232, 0.55) !important;
+        text-shadow: none !important;
+      }
+
+      .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+      .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover,
+      .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:active {
         color: var(--chalk-soft) !important;
+        background: transparent !important;
+        background-image: none !important;
+        border: 1.5px dashed rgba(245, 241, 232, 0.18) !important;
+        opacity: 0.45 !important;
+        cursor: not-allowed !important;
+        box-shadow: none !important;
+      }
+
+      table.dataTable thead .sorting,
+      table.dataTable thead .sorting_asc,
+      table.dataTable thead .sorting_desc,
+      table.dataTable thead .sorting_asc_disabled,
+      table.dataTable thead .sorting_desc_disabled {
+        position: relative;
+        cursor: pointer;
+        background-image: none !important;
+        padding-right: 30px !important;
+      }
+
+      table.dataTable thead .sorting::before,
+      table.dataTable thead .sorting::after,
+      table.dataTable thead .sorting_asc::before,
+      table.dataTable thead .sorting_asc::after,
+      table.dataTable thead .sorting_desc::before,
+      table.dataTable thead .sorting_desc::after,
+      table.dataTable thead .sorting_asc_disabled::before,
+      table.dataTable thead .sorting_asc_disabled::after,
+      table.dataTable thead .sorting_desc_disabled::before,
+      table.dataTable thead .sorting_desc_disabled::after {
+        position: absolute !important;
+        display: block !important;
+        right: 10px;
+        font-size: 11px !important;
+        line-height: 1 !important;
+        color: var(--chalk-soft) !important;
+        opacity: 0.55 !important;
+      }
+
+      table.dataTable thead .sorting::before,
+      table.dataTable thead .sorting_asc::before,
+      table.dataTable thead .sorting_desc::before {
+        content: \"\\25B2\";
+        bottom: 54%;
+      }
+
+      table.dataTable thead .sorting::after,
+      table.dataTable thead .sorting_asc::after,
+      table.dataTable thead .sorting_desc::after {
+        content: \"\\25BC\";
+        top: 54%;
+      }
+
+      table.dataTable thead .sorting_asc::before {
+        color: var(--chalk-yellow) !important;
+        opacity: 1 !important;
+      }
+
+      table.dataTable thead .sorting_desc::after {
+        color: var(--chalk-yellow) !important;
+        opacity: 1 !important;
+      }
+
+      table.dataTable thead .sorting:hover::before,
+      table.dataTable thead .sorting:hover::after {
+        color: var(--chalk) !important;
+        opacity: 0.85 !important;
+      }
+
+      /* hide DT's cloned thead inside scrollBody (kept for column-width sync) */
+      .dataTables_scrollBody thead,
+      .dataTables_scrollBody thead tr,
+      .dataTables_scrollBody thead th {
+        visibility: hidden !important;
+      }
+      .dataTables_scrollBody thead th::before,
+      .dataTables_scrollBody thead th::after {
+        display: none !important;
       }
 
       /* CHALKBOARD-WIDE TEXT (Introduction MathJax) */
@@ -1108,6 +1231,125 @@ ui <- fluidPage(
       .doodle-parabola { top: 220px; right: 18px; width: 90px; transform: rotate(8deg); }
       .doodle-arrow { bottom: 90px; left: 24px; width: 76px; transform: rotate(-15deg); }
 
+      /* COMPACT BUTTON (Play/Pause, Download CSV) */
+      .btn-chalk-small, .btn.btn-chalk-small,
+      a.btn-chalk-small.shiny-download-link {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px !important;
+        min-height: 38px;
+        background: var(--chalk-yellow) !important;
+        color: var(--board-deep) !important;
+        border: 2px solid var(--board-deep) !important;
+        border-radius: 5px !important;
+        font-family: 'Caveat', cursive !important;
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px;
+        line-height: 1;
+        box-shadow: 3px 3px 0 0 rgba(245, 241, 232, 0.85);
+        cursor: pointer;
+        text-decoration: none !important;
+        transition: transform 100ms, box-shadow 100ms;
+      }
+      .btn-chalk-small:hover, .btn-chalk-small:focus,
+      a.btn-chalk-small.shiny-download-link:hover {
+        background: #fce28a !important;
+        color: var(--board-deep) !important;
+        transform: translate(-1px, -1px);
+        box-shadow: 4px 4px 0 0 rgba(245, 241, 232, 0.9);
+        outline: none;
+        text-decoration: none !important;
+      }
+      .btn-chalk-small:active {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0 0 rgba(245, 241, 232, 0.85);
+      }
+      .btn-chalk-small i, .btn-chalk-small .fa, .btn-chalk-small svg {
+        color: var(--board-deep);
+      }
+
+      /* TABLE TOOLBAR (above DT) */
+      .table-toolbar {
+        display: flex;
+        justify-content: flex-end;
+        margin: 0 0 12px;
+        padding: 0 4px;
+      }
+
+      /* ANIMATION CONTROLS (Graph tab) */
+      .anim-controls {
+        display: flex;
+        gap: 16px;
+        align-items: flex-end;
+        margin-top: 14px;
+        padding: 0 6px;
+      }
+      .anim-controls .form-group { flex: 1 1 auto; margin: 0; }
+      .anim-controls .shiny-input-container { width: 100%; }
+      .anim-controls > .btn-chalk-small { flex: 0 0 auto; margin-bottom: 4px; }
+
+      /* CONVERGENCE CALLOUT (sticky note) */
+      .convergence-callout {
+        position: relative;
+        margin: 18px 6px 0;
+        padding: 22px 22px 18px;
+        color: var(--ink-navy);
+        background: var(--chalk-yellow);
+        border-radius: 2px;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 16px;
+        line-height: 1.5;
+        transform: rotate(-0.6deg);
+        box-shadow: var(--paper-shadow);
+      }
+      .convergence-callout::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: -10px;
+        width: 80px;
+        height: 22px;
+        background: var(--washi);
+        transform: translateX(-50%) rotate(-2deg);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+      }
+      .convergence-callout strong {
+        font-family: 'Caveat', cursive;
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .convergence-order {
+        display: inline-block;
+        margin: 0 4px;
+        padding: 2px 10px;
+        background: rgba(29, 53, 87, 0.1);
+        border: 1.5px solid var(--ink-navy);
+        border-radius: 4px;
+        font-family: 'Crimson Pro', serif;
+        font-weight: 700;
+        font-size: 18px;
+      }
+
+      /* IRS SLIDER OVERRIDES (sliderInput uses ionRangeSlider) */
+      .anim-controls .irs--shiny .irs-bar { background: var(--chalk-yellow); border-top-color: var(--chalk-yellow); border-bottom-color: var(--chalk-yellow); }
+      .anim-controls .irs--shiny .irs-line { background: rgba(245, 241, 232, 0.18); border-color: var(--chalk-dim); }
+      .anim-controls .irs--shiny .irs-handle { background: var(--chalk-yellow); border: 2px solid var(--board-deep); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+      .anim-controls .irs--shiny .irs-handle > i { display: none; }
+      .anim-controls .irs--shiny .irs-from,
+      .anim-controls .irs--shiny .irs-to,
+      .anim-controls .irs--shiny .irs-single { background: var(--chalk-yellow); color: var(--board-deep); font-family: 'Patrick Hand', cursive; font-size: 14px; }
+      .anim-controls .irs--shiny .irs-from::before,
+      .anim-controls .irs--shiny .irs-to::before,
+      .anim-controls .irs--shiny .irs-single::before { border-top-color: var(--chalk-yellow); }
+      .anim-controls .irs--shiny .irs-min,
+      .anim-controls .irs--shiny .irs-max { color: var(--chalk-soft); background: transparent; font-family: 'Patrick Hand', cursive; font-size: 13px; }
+      .anim-controls .irs--shiny .irs-grid-text { color: var(--chalk-soft); font-family: 'Patrick Hand', cursive; }
+      .anim-controls .irs--shiny .irs-grid-pol { background: var(--chalk-soft); }
+      .anim-controls label.control-label,
+      .anim-controls .control-label { color: var(--chalk); font-family: 'Caveat', cursive; font-size: 22px; }
+
       /* RESPONSIVE */
       @media (max-width: 900px) {
         .container-fluid { padding: 16px; }
@@ -1130,6 +1372,16 @@ ui <- fluidPage(
         .nav-tabs { gap: 12px; }
         .nav-tabs > li > a { font-size: 20px; }
       }
+    ")),
+    tags$script(HTML("
+      $(document).on('keydown', '#func, #deriv, #x0, #tol, #max_iter', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); $('#calculate').click(); }
+      });
+      $(document).on('shiny:connected', function() {
+        Shiny.addCustomMessageHandler('clickCalculate', function(_) {
+          $('#calculate').click();
+        });
+      });
     "))
   ),
   HTML("<svg xmlns='http://www.w3.org/2000/svg' style='position:absolute;width:0;height:0;overflow:hidden' aria-hidden='true'>
@@ -1186,6 +1438,12 @@ ui <- fluidPage(
       div(
         class = "control-panel",
         h2("Calculator"),
+        selectInput(
+          "preset",
+          "Examples",
+          choices = preset_choices(),
+          selected = "default"
+        ),
         textInput(
           "func",
           "Function f(x)",
@@ -1247,13 +1505,29 @@ ui <- fluidPage(
             "Graph",
             div(
               class = "paper-pin",
-              plotOutput("function_plot", height = "500px")
+              plotOutput("function_plot", height = "500px", click = "plot_click")
+            ),
+            div(
+              class = "anim-controls",
+              sliderInput(
+                "step_view",
+                "Iteration",
+                min = 0, max = 0, value = 0, step = 1,
+                width = "100%"
+              ),
+              actionButton("play_toggle", "▶ Play", class = "btn-chalk-small")
             ),
             div(
               class = "plot-caption",
-              "The curve shows f(x), the horizontal line marks y = 0, ",
-              "and the tangent line shows the Newton update from the latest iteration."
+              HTML("Click anywhere on the plot to set <strong>x<sub>0</sub></strong>. "),
+              "Drag the slider or press Play to step through iterations. ",
+              "The dashed red line is the tangent at the current step."
             )
+          ),
+          tabPanel(
+            "Convergence",
+            div(class = "paper-pin", plotOutput("convergence_plot", height = "420px")),
+            uiOutput("convergence_summary")
           ),
           tabPanel(
             "Steps",
@@ -1261,6 +1535,10 @@ ui <- fluidPage(
           ),
           tabPanel(
             "Table",
+            div(
+              class = "table-toolbar",
+              downloadButton("download_csv", "Download CSV", class = "btn-chalk-small")
+            ),
             DT::dataTableOutput("table")
           ),
           tabPanel(
@@ -1336,6 +1614,12 @@ server <- function(input, output, session) {
   calculation <- eventReactive(
     input$calculate,
     {
+      validate(
+        need(isTruthy(input$func), "Enter a function f(x)."),
+        need(is.finite(input$x0), "Enter a finite number for the initial estimate x₀."),
+        need(is.finite(input$tol) && input$tol > 0, "Tolerance must be a positive number."),
+        need(is.finite(input$max_iter) && input$max_iter >= 1, "Maximum iterations must be at least 1.")
+      )
       tryCatch(
         newton_method(
           func_text = input$func,
@@ -1355,6 +1639,66 @@ server <- function(input, output, session) {
     },
     ignoreInit = FALSE
   )
+
+  # Helper: do current input values match the given preset?
+  inputs_match_preset <- function(p) {
+    if (is.null(p) || is.null(p$func)) return(FALSE)
+    expected_deriv <- if (is.null(p$deriv)) "" else p$deriv
+    isTruthy(input$func) && identical(input$func, p$func) &&
+      identical(if (is.null(input$deriv)) "" else input$deriv, expected_deriv) &&
+      isTruthy(input$x0) && is.finite(input$x0) &&
+      abs(input$x0 - p$x0) < 1e-9
+  }
+
+  # When a preset is chosen, fill the form fields and re-run Calculate
+  preset_applying <- reactiveVal(FALSE)
+
+  observeEvent(input$preset, {
+    if (input$preset == "custom") return()
+    p <- presets[[input$preset]]
+    if (is.null(p) || is.null(p$func)) return()
+    if (inputs_match_preset(p)) {
+      session$sendCustomMessage("clickCalculate", list())
+      return()
+    }
+    preset_applying(TRUE)
+    updateTextInput(session, "func", value = p$func)
+    updateTextInput(session, "deriv", value = if (is.null(p$deriv)) "" else p$deriv)
+    updateNumericInput(session, "x0", value = p$x0)
+  }, ignoreInit = TRUE)
+
+  # Reacts to any field edit. While a preset is being applied, don't flip to
+  # Custom — instead wait for the inputs to converge to the preset's values,
+  # then release the lock and trigger Calculate. After release, any edit flips
+  # the dropdown to Custom.
+  observeEvent(list(input$func, input$deriv, input$x0, input$tol, input$max_iter), {
+    cur <- input$preset
+    if (isTRUE(preset_applying())) {
+      if (is.null(cur) || cur == "custom") {
+        preset_applying(FALSE)
+        return()
+      }
+      p <- presets[[cur]]
+      if (inputs_match_preset(p)) {
+        preset_applying(FALSE)
+        session$sendCustomMessage("clickCalculate", list())
+      }
+      return()
+    }
+    if (!is.null(cur) && cur != "custom") {
+      updateSelectInput(session, "preset", selected = "custom")
+    }
+  }, ignoreInit = TRUE)
+
+  # Click on the function plot to set x0
+  observeEvent(input$plot_click, {
+    x_clicked <- round(input$plot_click$x, 4)
+    if (!is.finite(x_clicked)) return()
+    updateNumericInput(session, "x0", value = x_clicked)
+    session$onFlushed(function() {
+      session$sendCustomMessage("clickCalculate", list())
+    }, once = TRUE)
+  })
 
   output$summary <- renderUI({
     result <- calculation()
@@ -1404,12 +1748,18 @@ server <- function(input, output, session) {
     validate(need(!isTRUE(result$error), result$message))
 
     display <- result$data
+    display$Residual <- abs(display$f_x_n)
+    display <- display[, c(
+      "Iteration", "x_n", "f_x_n", "f_prime_x_n", "x_next",
+      "Residual", "Approximate_Error", "Relative_Error"
+    )]
     names(display) <- c(
       "Iteration",
       "x<sub>n</sub>",
       "f(x<sub>n</sub>)",
       "f'(x<sub>n</sub>)",
       "x<sub>n+1</sub>",
+      "|f(x<sub>n</sub>)|",
       "Approximate Error",
       "Relative Error"
     )
@@ -1427,10 +1777,27 @@ server <- function(input, output, session) {
       )
     ) |>
       DT::formatRound(
-        columns = 2:7,
+        columns = 2:8,
         digits = 5
       )
   })
+
+  output$download_csv <- downloadHandler(
+    filename = function() {
+      paste0("newton-iterations-", format(Sys.time(), "%Y%m%d-%H%M%S"), ".csv")
+    },
+    content = function(file) {
+      result <- calculation()
+      req(!isTRUE(result$error))
+      out <- result$data
+      out$Residual <- abs(out$f_x_n)
+      out <- out[, c(
+        "Iteration", "x_n", "f_x_n", "f_prime_x_n", "x_next",
+        "Residual", "Approximate_Error", "Relative_Error"
+      )]
+      write.csv(out, file, row.names = FALSE)
+    }
+  )
 
   output$steps <- renderUI({
     result <- calculation()
@@ -1457,6 +1824,10 @@ server <- function(input, output, session) {
           ),
           div(
             class = "math-line",
+            paste0("\\(\\left|f(x_{", current_index, "})\\right| = ", format_number(abs(row$f_x_n)), "\\)")
+          ),
+          div(
+            class = "math-line",
             paste0("\\(f'(x_{", current_index, "}) = ", format_number(row$f_prime_x_n), "\\)")
           ),
           div(
@@ -1473,6 +1844,10 @@ server <- function(input, output, session) {
           div(
             class = "math-line",
             paste0("\\(f(x_{", current_index, "}) = ", format_number(row$f_x_n), "\\)")
+          ),
+          div(
+            class = "math-line",
+            paste0("\\(\\left|f(x_{", current_index, "})\\right| = ", format_number(abs(row$f_x_n)), "\\)")
           ),
           div(
             class = "math-line",
@@ -1519,12 +1894,13 @@ server <- function(input, output, session) {
     validate(need(!isTRUE(result$error), result$message))
 
     data <- result$data
+    n_total <- nrow(data) - 1L  # iterations 0..n_total
+    step <- input$step_view
+    if (is.null(step) || !is.finite(step)) step <- n_total
+    step <- max(0L, min(as.integer(step), n_total))
+
     final_row <- data[nrow(data), ]
-    root_estimate <- ifelse(
-      is.finite(final_row$x_next),
-      final_row$x_next,
-      final_row$x_n
-    )
+    root_estimate <- if (is.finite(final_row$x_next)) final_row$x_next else final_row$x_n
 
     x0 <- result$x0
     distance <- max(1, abs(x0 - root_estimate), abs(root_estimate) * 0.25)
@@ -1542,34 +1918,21 @@ server <- function(input, output, session) {
 
     y_range <- range(y_values[finite_points], 0, na.rm = TRUE)
     y_padding <- diff(y_range) * 0.08
-
-    if (!is.finite(y_padding) || y_padding == 0) {
-      y_padding <- 1
-    }
+    if (!is.finite(y_padding) || y_padding == 0) y_padding <- 1
 
     op <- par(
-      bg = "#fdf6e3",
-      family = "serif",
-      col.axis = "#1d3557",
-      col.lab = "#1d3557",
-      col.main = "#1d3557",
+      bg = "#fdf6e3", family = "serif",
+      col.axis = "#1d3557", col.lab = "#1d3557", col.main = "#1d3557",
       fg = "#1d3557",
-      cex.main = 1.4,
-      cex.axis = 1,
-      cex.lab = 1.1,
-      font.main = 2
+      cex.main = 1.4, cex.axis = 1, cex.lab = 1.1, font.main = 2
     )
     on.exit(par(op), add = TRUE)
 
     plot(
-      x_values,
-      y_values,
-      type = "l",
-      lwd = 2.6,
-      col = "#1d3557",
-      xlab = "x",
-      ylab = "f(x)",
-      main = "Newton's Method Graph",
+      x_values, y_values,
+      type = "l", lwd = 2.6, col = "#1d3557",
+      xlab = "x", ylab = "f(x)",
+      main = paste0("Newton's Method  —  iteration ", step, " of ", n_total),
       ylim = c(y_range[1] - y_padding, y_range[2] + y_padding),
       panel.first = {
         usr <- par("usr")
@@ -1579,35 +1942,189 @@ server <- function(input, output, session) {
     )
     abline(h = 0, col = "#5b6b78", lty = 2, lwd = 1.4)
 
-    points(
-      x0,
-      scalar_value(result$f, x0, "f(x0)"),
-      pch = 19,
-      col = "#1d3557",
-      cex = 1.3
-    )
-    points(root_estimate, 0, pch = 19, col = "#e63946", cex = 1.4)
+    # Iterates from row 1 (Iteration 0) up to and including current step
+    visible_rows <- data[seq_len(step + 1L), , drop = FALSE]
+    pt_x <- visible_rows$x_n
+    pt_y <- vapply(pt_x, function(xv) tryCatch(scalar_value(result$f, xv, "f(x)"),
+                                               error = function(e) NA_real_), numeric(1))
+    finite_pts <- is.finite(pt_x) & is.finite(pt_y)
+    if (any(finite_pts)) {
+      points(pt_x[finite_pts], pt_y[finite_pts],
+             pch = 19, col = "#1d3557", cex = 1.2)
+      # Halo on the latest dot for emphasis
+      latest <- which(finite_pts)[sum(finite_pts)]
+      points(pt_x[latest], pt_y[latest],
+             pch = 21, col = "#e63946", bg = "#1d3557", cex = 1.7, lwd = 2)
+    }
 
-    if (is.finite(final_row$x_n) &&
-        is.finite(final_row$f_x_n) &&
-        is.finite(final_row$f_prime_x_n)) {
-      tangent_y <- final_row$f_x_n +
-        final_row$f_prime_x_n * (x_values - final_row$x_n)
+    # Tangent at the current step
+    cur_row <- data[step + 1L, ]
+    if (is.finite(cur_row$x_n) && is.finite(cur_row$f_x_n) &&
+        is.finite(cur_row$f_prime_x_n) && abs(cur_row$f_prime_x_n) > 1e-15) {
+      tangent_y <- cur_row$f_x_n + cur_row$f_prime_x_n * (x_values - cur_row$x_n)
       lines(x_values, tangent_y, col = "#e63946", lwd = 2, lty = 3)
+    }
+
+    # Root marker only on the final frame
+    if (step == n_total && is.finite(root_estimate)) {
+      points(root_estimate, 0, pch = 19, col = "#e63946", cex = 1.5)
     }
 
     legend(
       "topright",
-      legend = c("f(x)", "y = 0", "Initial estimate", "Root estimate", "Latest tangent"),
+      legend = c("f(x)", "y = 0", "Iterate x_k", "Current iterate", "Tangent at x_k"),
       col = c("#1d3557", "#5b6b78", "#1d3557", "#e63946", "#e63946"),
       lty = c(1, 2, NA, NA, 3),
-      pch = c(NA, NA, 19, 19, NA),
-      bg = "#fdf6e3",
-      box.col = "#1d3557",
-      text.col = "#1d3557",
+      pch = c(NA, NA, 19, 21, NA),
+      pt.bg = c(NA, NA, NA, "#1d3557", NA),
+      bg = "#fdf6e3", box.col = "#1d3557", text.col = "#1d3557",
       cex = 0.95
     )
   }, bg = "#fdf6e3")
+
+  # Update the iteration slider whenever a new calculation finishes
+  observeEvent(calculation(), {
+    result <- calculation()
+    if (isTRUE(result$error)) return()
+    n_total <- nrow(result$data) - 1L
+    updateSliderInput(session, "step_view", min = 0, max = n_total, value = n_total)
+    playing(FALSE)
+    updateActionButton(session, "play_toggle", label = "▶ Play")
+  })
+
+  # Animation engine
+  playing <- reactiveVal(FALSE)
+
+  observeEvent(input$play_toggle, {
+    playing(!isTRUE(playing()))
+    updateActionButton(
+      session, "play_toggle",
+      label = if (isTRUE(playing())) "⏸ Pause" else "▶ Play"
+    )
+  })
+
+  observe({
+    if (!isTRUE(playing())) return()
+    invalidateLater(800, session)
+    isolate({
+      result <- calculation()
+      if (isTRUE(result$error)) { playing(FALSE); return() }
+      n_total <- nrow(result$data) - 1L
+      cur <- input$step_view
+      if (is.null(cur)) cur <- 0
+      nxt <- if (cur >= n_total) 0L else as.integer(cur) + 1L
+      updateSliderInput(session, "step_view", value = nxt)
+    })
+  })
+
+  output$convergence_plot <- renderPlot({
+    result <- calculation()
+    validate(need(!isTRUE(result$error), result$message))
+
+    data <- result$data
+    final_row <- data[nrow(data), ]
+    x_star <- if (is.finite(final_row$x_next)) final_row$x_next else final_row$x_n
+    validate(need(is.finite(x_star), "No root estimate available."))
+
+    errors <- abs(data$x_n - x_star)
+    iter_idx <- data$Iteration
+    keep <- is.finite(errors) & errors > 0
+    errors <- errors[keep]
+    iter_idx <- iter_idx[keep]
+    validate(need(length(errors) >= 2, "Not enough iterations to plot convergence."))
+
+    op <- par(
+      bg = "#fdf6e3",
+      family = "serif",
+      col.axis = "#1d3557",
+      col.lab = "#1d3557",
+      col.main = "#1d3557",
+      fg = "#1d3557",
+      cex.main = 1.4, cex.axis = 1, cex.lab = 1.1,
+      font.main = 2,
+      mar = c(4.5, 5, 3.5, 1.5)
+    )
+    on.exit(par(op), add = TRUE)
+
+    plot(
+      iter_idx, errors,
+      log = "y", type = "b", pch = 19, lwd = 2.4, cex = 1.2,
+      col = "#1d3557",
+      xlab = "Iteration n",
+      ylab = expression(group("|", x[n] - x^"*", "|") ~ "(log scale)"),
+      main = expression("Convergence:" ~ group("|", x[n] - x^"*", "|")),
+      panel.first = {
+        usr <- par("usr")
+        rect(usr[1], 10^usr[3], usr[2], 10^usr[4], col = "#fdf6e3", border = NA)
+        grid(col = "#cfc6b8", lty = 1, lwd = 0.7)
+      }
+    )
+
+    show_guide <- length(errors) >= 3 && errors[2] < errors[1]
+    if (show_guide) {
+      # Quadratic guide: u_n = (2u_0 - u_1) + (u_1 - u_0) * 2^n,
+      # i.e. a curve that's exact at n = 0, 1 and grows like e_n ~ e_{n-1}^2.
+      u0 <- log(errors[1]); u1 <- log(errors[2])
+      n_seq <- seq_along(errors) - 1
+      log_ref <- (2 * u0 - u1) + (u1 - u0) * 2 ^ n_seq
+      ref <- exp(pmax(log_ref, log(.Machine$double.eps)))
+      lines(iter_idx, ref, col = "#e63946", lwd = 1.6, lty = 3)
+    }
+    legend(
+      "topright",
+      legend = if (show_guide)
+        c(expression(group("|", x[n] - x^"*", "|")), "quadratic guide")
+      else
+        c(expression(group("|", x[n] - x^"*", "|"))),
+      col = if (show_guide) c("#1d3557", "#e63946") else "#1d3557",
+      lty = if (show_guide) c(1, 3) else 1,
+      lwd = if (show_guide) c(2.4, 1.6) else 2.4,
+      pch = if (show_guide) c(19, NA) else 19,
+      bg = "#fdf6e3", box.col = "#1d3557", text.col = "#1d3557", cex = 0.95
+    )
+  }, bg = "#fdf6e3")
+
+  output$convergence_summary <- renderUI({
+    result <- calculation()
+    if (isTRUE(result$error)) {
+      return(div(class = "convergence-callout",
+                 strong("Note: "), "the calculation did not produce a usable iteration sequence."))
+    }
+    data <- result$data
+    final_row <- data[nrow(data), ]
+    x_star <- if (is.finite(final_row$x_next)) final_row$x_next else final_row$x_n
+    if (!is.finite(x_star)) {
+      return(div(class = "convergence-callout",
+                 strong("Note: "), "no finite root estimate is available for this run."))
+    }
+    errors <- abs(data$x_n - x_star)
+    errors <- errors[is.finite(errors) & errors > 0]
+
+    if (length(errors) < 3) {
+      return(div(class = "convergence-callout",
+                 strong("Not enough data: "),
+                 "need at least three non-zero errors to estimate the order of convergence."))
+    }
+
+    n <- length(errors)
+    ratios <- log(errors[(n-1):n]) / log(errors[(n-2):(n-1)])
+    p_hat <- mean(ratios[is.finite(ratios)])
+    p_hat <- max(0, min(p_hat, 4))
+    p_text <- formatC(p_hat, format = "f", digits = 2)
+
+    blurb <- if (p_hat >= 1.7) {
+      "quadratic, as expected for Newton near a simple root."
+    } else if (p_hat >= 1.2) {
+      "between linear and quadratic — likely near a multiple root or far from regime."
+    } else {
+      "approximately linear — slow convergence (multiple root or weak conditions)."
+    }
+
+    div(class = "convergence-callout",
+        strong("Estimated order: "),
+        "p ≈ ", span(class = "convergence-order", p_text),
+        " — ", blurb)
+  })
 }
 
 shinyApp(ui, server)
