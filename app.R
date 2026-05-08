@@ -298,7 +298,6 @@ ui <- fluidPage(
 
       .app-shell {
         display: grid;
-        grid-template-rows: auto minmax(0, 1fr);
         gap: 18px;
         min-height: calc(100vh - 48px);
       }
@@ -556,6 +555,161 @@ ui <- fluidPage(
         background: var(--washi);
         transform: translateX(-50%) rotate(-3deg);
         box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+      }
+
+      .intro-strip {
+        margin: 18px 18px 0;
+        padding: 18px 20px 16px;
+        border: 1.5px dashed var(--chalk-faint);
+        border-radius: 8px;
+        background: rgba(245,241,232,0.03);
+        overflow: hidden;
+      }
+
+      .intro-strip summary {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: start;
+        cursor: pointer;
+        list-style: none;
+        transition: transform 180ms ease;
+      }
+
+      .intro-strip summary::-webkit-details-marker { display: none; }
+      .intro-strip summary:hover { transform: translateY(-1px); }
+
+      .intro-strip-head h3 {
+        margin: 0 0 6px;
+        color: var(--chalk);
+        font-family: 'Caveat', cursive;
+        font-size: 30px;
+        line-height: 1;
+      }
+
+      .intro-strip-head p {
+        margin: 0;
+        color: var(--chalk-soft);
+        font-family: 'Patrick Hand', cursive;
+        font-size: 16px;
+        line-height: 1.45;
+      }
+
+      .intro-strip-toggle {
+        align-self: center;
+        padding: 7px 14px;
+        color: var(--chalk-yellow);
+        border: 1.5px dashed var(--chalk-yellow);
+        border-radius: 999px;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 14px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+      }
+
+      .intro-strip:not([open]) .intro-strip-toggle::before { content: 'Expand introduction'; }
+      .intro-strip[open] .intro-strip-toggle::before { content: 'Collapse introduction'; }
+      .intro-strip[open] .intro-strip-toggle {
+        background: rgba(244, 211, 94, 0.12);
+        transform: rotate(-2deg);
+      }
+
+      .intro-strip-content {
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transform: translateY(-8px);
+        transition: max-height 320ms ease, opacity 220ms ease, transform 220ms ease;
+      }
+
+      .intro-strip[open] .intro-strip-content,
+      .intro-strip.is-collapsing .intro-strip-content {
+        max-height: 900px;
+      }
+
+      .intro-strip[open] .intro-strip-content {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .intro-strip.is-collapsing .intro-strip-content {
+        opacity: 0;
+        transform: translateY(-8px);
+        max-height: 0;
+      }
+
+      .intro-strip-formula {
+        margin-top: 14px;
+        padding: 16px 18px;
+        color: var(--ink-navy);
+        background: var(--paper-cream);
+        border-radius: 3px;
+        box-shadow: var(--paper-shadow);
+        text-align: center;
+        transition: transform 220ms ease, opacity 220ms ease;
+      }
+
+      .intro-strip-formula .MathJax,
+      .intro-strip-formula .MathJax_Display,
+      .intro-strip-formula mjx-container {
+        color: var(--ink-navy) !important;
+      }
+
+      .intro-strip-body {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1.5px dashed var(--chalk-faint);
+      }
+
+      .intro-strip[open] .intro-section {
+        animation: intro-card-rise 260ms ease both;
+      }
+
+      .intro-strip[open] .intro-section:nth-child(2) { animation-delay: 40ms; }
+      .intro-strip[open] .intro-section:nth-child(3) { animation-delay: 80ms; }
+      .intro-strip[open] .intro-section:nth-child(4) { animation-delay: 120ms; }
+
+      @keyframes intro-card-rise {
+        0% { opacity: 0; transform: translateY(12px) rotate(0deg); }
+        100% { opacity: 1; transform: translateY(0) rotate(0deg); }
+      }
+
+      .app-footer-band {
+        width: 100%;
+        padding: 8px 0 4px;
+      }
+
+      .app-footer {
+        display: grid;
+        justify-items: center;
+        width: min(720px, calc(100% - 24px));
+        margin: 0 auto;
+        padding: 14px 18px 4px;
+        color: var(--chalk-soft);
+        text-align: center;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 15px;
+        line-height: 1.4;
+        opacity: 0.88;
+      }
+
+      .app-footer-title {
+        color: var(--chalk);
+        font-family: 'Caveat', cursive;
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      .app-footer-line {
+        width: min(320px, 100%);
+        margin: 8px 0 10px;
+        border-top: 1.5px dashed var(--chalk-dim);
+      }
+
+      .app-footer-names {
+        letter-spacing: 0.03em;
       }
 
       /* CONTENT PANEL */
@@ -1000,6 +1154,33 @@ ui <- fluidPage(
 
       .intro-section ul { margin: 8px 0 0 22px; padding: 0; }
 
+      .conclusion-note {
+        max-width: 760px;
+        margin: 4px auto 0;
+        padding: 26px 28px 22px;
+        color: var(--ink-navy);
+        background: var(--paper-cream);
+        border-radius: 3px;
+        box-shadow: var(--paper-shadow);
+        transform: rotate(-0.25deg);
+      }
+
+      .conclusion-note h3 {
+        margin: 0 0 12px;
+        color: var(--ink-navy);
+        font-family: 'Caveat', cursive;
+        font-size: 32px;
+        line-height: 1;
+      }
+
+      .conclusion-note p {
+        margin: 0;
+        color: var(--ink-navy);
+        font-family: 'Patrick Hand', cursive;
+        font-size: 18px;
+        line-height: 1.55;
+      }
+
       /* DT TABLE — CHALK TABLE */
       .dataTables_wrapper {
         font-family: 'Patrick Hand', cursive;
@@ -1361,6 +1542,8 @@ ui <- fluidPage(
         .app-shell, .layout { min-height: auto; }
         .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .doodle { display: none; }
+        .intro-strip { margin: 16px 16px 0; }
+        .intro-strip summary { grid-template-columns: 1fr; }
       }
 
       @media (max-width: 560px) {
@@ -1376,6 +1559,25 @@ ui <- fluidPage(
     tags$script(HTML("
       $(document).on('keydown', '#func, #deriv, #x0, #tol, #max_iter', function(e) {
         if (e.key === 'Enter') { e.preventDefault(); $('#calculate').click(); }
+      });
+      $(document).on('click', '.intro-strip > summary', function(e) {
+        e.preventDefault();
+        const details = $(this).parent();
+        if (details.hasClass('is-animating')) return;
+        if (!details.prop('open')) {
+          details.addClass('is-animating').prop('open', true);
+          requestAnimationFrame(function() {
+            details.removeClass('is-collapsing');
+            setTimeout(function() {
+              details.removeClass('is-animating');
+            }, 340);
+          });
+          return;
+        }
+        details.addClass('is-animating is-collapsing');
+        setTimeout(function() {
+          details.prop('open', false).removeClass('is-animating is-collapsing');
+        }, 320);
       });
       $(document).on('shiny:connected', function() {
         Shiny.addCustomMessageHandler('clickCalculate', function(_) {
@@ -1433,8 +1635,8 @@ ui <- fluidPage(
       ),
       HTML("<svg class='hero-apple' viewBox='0 0 64 64' aria-hidden='true'><use href='#sym-apple'/></svg>")
     ),
-    div(
-      class = "layout",
+      div(
+        class = "layout",
       div(
         class = "control-panel",
         h2("Calculator"),
@@ -1489,6 +1691,76 @@ ui <- fluidPage(
       ),
       div(
         class = "content-panel",
+        tags$details(
+          class = "intro-strip",
+          open = "open",
+          tags$summary(
+            div(
+              class = "intro-strip-head",
+              h3("Introduction to Newton's Method"),
+              p(
+                HTML(
+                  "Use tangent-line updates to move from an initial estimate x<sub>0</sub> toward a root of f(x)=0."
+                )
+              )
+            ),
+            span(class = "intro-strip-toggle")
+          ),
+          div(
+            class = "intro-strip-content",
+            withMathJax(
+              div(
+                class = "intro-strip-formula",
+                "$$x_{n+1}=x_n-\\frac{f(x_n)}{f'(x_n)}, \\quad n \\ge 0$$"
+              )
+            ),
+            div(
+              class = "intro-strip-body",
+              div(
+                class = "intro-grid",
+                div(
+                  class = "intro-section",
+                  h3("Convergence"),
+                  p(
+                    "When f, f', and f'' are continuous near a root and ",
+                    "f'(root) is not zero, Newton's Method can converge very ",
+                    "quickly from a sufficiently close initial estimate."
+                  )
+                ),
+                div(
+                  class = "intro-section",
+                  h3("Error Estimate"),
+                  p(
+                    HTML(
+                      "A practical stopping rule is based on the change between ",
+                      "successive estimates: |x<sub>n+1</sub> - x<sub>n</sub>|. Relative error ",
+                      "uses that change divided by |x<sub>n+1</sub>|."
+                    )
+                  )
+                ),
+                div(
+                  class = "intro-section",
+                  h3("Input Rules"),
+                  tags$ul(
+                    tags$li("Write multiplication explicitly: 2*x, not 2x."),
+                    tags$li("Use functions like sin(x), cos(x), exp(x), and log(x)."),
+                    tags$li(HTML("Use powers with ^, such as x<sup>6</sup>."))
+                  )
+                ),
+                div(
+                  class = "intro-section",
+                  h3("Default Example"),
+                  p(
+                    HTML(
+                      "The app starts with f(x) = x<sup>6</sup> - x - 1 and x<sub>0</sub> = 2, ",
+                      "matching the reference example. It converges near 1.13472."
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ),
         tabsetPanel(
           tabPanel(
             "Results",
@@ -1542,69 +1814,27 @@ ui <- fluidPage(
             DT::dataTableOutput("table")
           ),
           tabPanel(
-            "Introduction",
+            "Conclusion",
             div(
-              class = "intro-panel",
-              h2("Newton's Method"),
+              class = "conclusion-note",
+              h3("What We Learned"),
               p(
-                HTML(
-                  "Newton's Method is an iterative technique for approximating ",
-                  "a root of f(x) = 0. Starting from x<sub>0</sub>, each step follows the ",
-                  "tangent line at the current point and uses where that tangent ",
-                  "crosses the x-axis as the next estimate."
-                )
-              ),
-              withMathJax(
-                div(
-                  class = "formula-strip",
-                  "$$x_{n+1}=x_n-\\frac{f(x_n)}{f'(x_n)}, \\quad n \\ge 0$$"
-                )
-              ),
-              div(
-                class = "intro-grid",
-                div(
-                  class = "intro-section",
-                  h3("Convergence"),
-                  p(
-                    "When f, f', and f'' are continuous near a root and ",
-                    "f'(root) is not zero, Newton's Method can converge very ",
-                    "quickly from a sufficiently close initial estimate."
-                  )
-                ),
-                div(
-                  class = "intro-section",
-                  h3("Error Estimate"),
-                  p(
-                    HTML(
-                      "A practical stopping rule is based on the change between ",
-                      "successive estimates: |x<sub>n+1</sub> - x<sub>n</sub>|. Relative error ",
-                      "uses that change divided by |x<sub>n+1</sub>|."
-                    )
-                  )
-                ),
-                div(
-                  class = "intro-section",
-                  h3("Input Rules"),
-                  tags$ul(
-                    tags$li("Write multiplication explicitly: 2*x, not 2x."),
-                    tags$li("Use functions like sin(x), cos(x), exp(x), and log(x)."),
-                    tags$li(HTML("Use powers with ^, such as x<sup>6</sup>."))
-                  )
-                ),
-                div(
-                  class = "intro-section",
-                  h3("Default Example"),
-                  p(
-                    HTML(
-                      "The app starts with f(x) = x<sup>6</sup> - x - 1 and x<sub>0</sub> = 2, ",
-                      "matching the reference example. It converges near 1.13472."
-                    )
-                  )
-                )
+                "We learned that Newton's Method uses tangent lines to improve an initial estimate and find a root. ",
+                "It can converge quickly when the starting value is close enough, but it can also fail if the derivative ",
+                "is too small or if the initial estimate is poorly chosen."
               )
             )
           )
         )
+      )
+    ),
+    div(
+      class = "app-footer-band",
+      div(
+        class = "app-footer",
+        div(class = "app-footer-title", "Group 5: Newtons Method"),
+        div(class = "app-footer-line"),
+        div(class = "app-footer-names", "Berbo, Diaz, Ipong, Montañez, Pantino, Sy")
       )
     )
   )
@@ -1699,6 +1929,11 @@ server <- function(input, output, session) {
       session$sendCustomMessage("clickCalculate", list())
     }, once = TRUE)
   })
+
+  # Playback state is separate from the integer slider so the graph can draw
+  # eased in-between frames while the slider still reads as whole iterations.
+  playing <- reactiveVal(FALSE)
+  playback_frame <- reactiveVal(NULL)
 
   output$summary <- renderUI({
     result <- calculation()
@@ -1895,9 +2130,18 @@ server <- function(input, output, session) {
 
     data <- result$data
     n_total <- nrow(data) - 1L  # iterations 0..n_total
-    step <- input$step_view
-    if (is.null(step) || !is.finite(step)) step <- n_total
-    step <- max(0L, min(as.integer(step), n_total))
+    frame <- if (isTRUE(playing())) playback_frame() else input$step_view
+    if (is.null(frame) || !is.finite(frame)) frame <- n_total
+    frame <- max(0, min(as.numeric(frame), n_total))
+    step <- max(0L, min(as.integer(floor(frame)), n_total))
+    phase <- if (isTRUE(playing()) && step < n_total) frame - step else 0
+    phase <- max(0, min(phase, 1))
+    eased_phase <- 0.5 - 0.5 * cos(pi * phase)
+    frame_label <- if (phase > 0.01 && step < n_total) {
+      paste0(step, " \u2192 ", step + 1L)
+    } else {
+      as.character(step)
+    }
 
     final_row <- data[nrow(data), ]
     root_estimate <- if (is.finite(final_row$x_next)) final_row$x_next else final_row$x_n
@@ -1932,7 +2176,7 @@ server <- function(input, output, session) {
       x_values, y_values,
       type = "l", lwd = 2.6, col = "#1d3557",
       xlab = "x", ylab = "f(x)",
-      main = paste0("Newton's Method  —  iteration ", step, " of ", n_total),
+      main = paste0("Newton's Method  —  iteration ", frame_label, " of ", n_total),
       ylim = c(y_range[1] - y_padding, y_range[2] + y_padding),
       panel.first = {
         usr <- par("usr")
@@ -1951,10 +2195,6 @@ server <- function(input, output, session) {
     if (any(finite_pts)) {
       points(pt_x[finite_pts], pt_y[finite_pts],
              pch = 19, col = "#1d3557", cex = 1.2)
-      # Halo on the latest dot for emphasis
-      latest <- which(finite_pts)[sum(finite_pts)]
-      points(pt_x[latest], pt_y[latest],
-             pch = 21, col = "#e63946", bg = "#1d3557", cex = 1.7, lwd = 2)
     }
 
     # Tangent at the current step
@@ -1965,8 +2205,22 @@ server <- function(input, output, session) {
       lines(x_values, tangent_y, col = "#e63946", lwd = 2, lty = 3)
     }
 
+    moving_x <- cur_row$x_n
+    moving_y <- cur_row$f_x_n
+    if (phase > 0 && is.finite(cur_row$x_next)) {
+      moving_x <- cur_row$x_n + (cur_row$x_next - cur_row$x_n) * eased_phase
+      moving_y <- tryCatch(
+        scalar_value(result$f, moving_x, "f(x)"),
+        error = function(error) NA_real_
+      )
+    }
+    if (is.finite(moving_x) && is.finite(moving_y)) {
+      points(moving_x, moving_y,
+             pch = 21, col = "#e63946", bg = "#1d3557", cex = 1.8, lwd = 2.2)
+    }
+
     # Root marker only on the final frame
-    if (step == n_total && is.finite(root_estimate)) {
+    if (frame >= n_total && is.finite(root_estimate)) {
       points(root_estimate, 0, pch = 19, col = "#e63946", cex = 1.5)
     }
 
@@ -1988,32 +2242,64 @@ server <- function(input, output, session) {
     if (isTRUE(result$error)) return()
     n_total <- nrow(result$data) - 1L
     updateSliderInput(session, "step_view", min = 0, max = n_total, value = n_total)
+    playback_frame(n_total)
     playing(FALSE)
     updateActionButton(session, "play_toggle", label = "▶ Play")
   })
 
-  # Animation engine
-  playing <- reactiveVal(FALSE)
+  observeEvent(input$step_view, {
+    if (!isTRUE(playing())) {
+      playback_frame(as.numeric(input$step_view))
+    }
+  }, ignoreInit = TRUE)
 
   observeEvent(input$play_toggle, {
-    playing(!isTRUE(playing()))
-    updateActionButton(
-      session, "play_toggle",
-      label = if (isTRUE(playing())) "⏸ Pause" else "▶ Play"
-    )
+    if (isTRUE(playing())) {
+      playing(FALSE)
+      updateActionButton(session, "play_toggle", label = "▶ Play")
+      return()
+    }
+
+    result <- calculation()
+    if (isTRUE(result$error)) return()
+
+    n_total <- nrow(result$data) - 1L
+    if (n_total < 1) return()
+
+    current_frame <- playback_frame()
+    if (is.null(current_frame) || !is.finite(current_frame)) {
+      current_frame <- input$step_view
+    }
+    if (is.null(current_frame) || !is.finite(current_frame) || current_frame >= n_total) {
+      current_frame <- 0
+      updateSliderInput(session, "step_view", value = 0)
+    }
+    playback_frame(current_frame)
+
+    playing(TRUE)
+    updateActionButton(session, "play_toggle", label = "⏸ Pause")
   })
 
   observe({
     if (!isTRUE(playing())) return()
-    invalidateLater(800, session)
+    invalidateLater(120, session)
     isolate({
       result <- calculation()
       if (isTRUE(result$error)) { playing(FALSE); return() }
       n_total <- nrow(result$data) - 1L
-      cur <- input$step_view
-      if (is.null(cur)) cur <- 0
-      nxt <- if (cur >= n_total) 0L else as.integer(cur) + 1L
-      updateSliderInput(session, "step_view", value = nxt)
+      if (n_total < 1) { playing(FALSE); return() }
+      cur <- playback_frame()
+      if (is.null(cur) || !is.finite(cur)) cur <- input$step_view
+      if (is.null(cur) || !is.finite(cur)) cur <- 0
+
+      nxt <- cur + 0.1
+      if (nxt > n_total) nxt <- 0
+
+      playback_frame(nxt)
+      slider_value <- as.integer(floor(nxt))
+      if (!isTRUE(input$step_view == slider_value)) {
+        updateSliderInput(session, "step_view", value = slider_value)
+      }
     })
   })
 
