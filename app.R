@@ -4,6 +4,124 @@ library(numDeriv)
 
 near_zero_derivative <- 1e-12
 
+known_math_functions <- c(
+  "abs", "acos", "acosh", "asin", "asinh", "atan", "atanh",
+  "ceiling", "cos", "cosh", "exp", "expm1", "floor", "gamma",
+  "lgamma", "log", "log10", "log1p", "log2", "round", "sign",
+  "sin", "sinh", "sqrt", "tan", "tanh", "trunc"
+)
+
+normalize_user_expression <- function(expression_text) {
+  expression_text <- trimws(expression_text)
+  expression_text <- gsub("\u2212|\u2013|\u2014", "-", expression_text, perl = TRUE)
+  expression_text <- gsub("\u00d7|\u00b7", "*", expression_text, perl = TRUE)
+  expression_text <- gsub("\u00f7", "/", expression_text, perl = TRUE)
+
+  chars <- strsplit(expression_text, "", fixed = TRUE)[[1]]
+  tokens <- character(0)
+  token_types <- character(0)
+  i <- 1
+
+  add_token <- function(value, type) {
+    tokens <<- c(tokens, value)
+    token_types <<- c(token_types, type)
+  }
+
+  is_digit <- function(char) grepl("^[0-9]$", char)
+  is_ident_start <- function(char) grepl("^[A-Za-z.]$", char)
+  is_ident_part <- function(char) grepl("^[A-Za-z0-9_.]$", char)
+
+  while (i <= length(chars)) {
+    char <- chars[[i]]
+
+    if (grepl("^\\s$", char)) {
+      i <- i + 1
+      next
+    }
+
+    starts_number <- is_digit(char) ||
+      (identical(char, ".") && i < length(chars) && is_digit(chars[[i + 1]]))
+
+    if (starts_number) {
+      start <- i
+
+      while (i <= length(chars) && (is_digit(chars[[i]]) || identical(chars[[i]], "."))) {
+        i <- i + 1
+      }
+
+      if (i <= length(chars) && grepl("^[eE]$", chars[[i]])) {
+        exponent_start <- i
+        i <- i + 1
+
+        if (i <= length(chars) && chars[[i]] %in% c("+", "-")) {
+          i <- i + 1
+        }
+
+        if (i <= length(chars) && is_digit(chars[[i]])) {
+          while (i <= length(chars) && is_digit(chars[[i]])) {
+            i <- i + 1
+          }
+        } else {
+          i <- exponent_start
+        }
+      }
+
+      add_token(paste0(chars[start:(i - 1)], collapse = ""), "number")
+      next
+    }
+
+    if (is_ident_start(char) && !identical(char, ".")) {
+      start <- i
+
+      while (i <= length(chars) && is_ident_part(chars[[i]])) {
+        i <- i + 1
+      }
+
+      add_token(paste0(chars[start:(i - 1)], collapse = ""), "identifier")
+      next
+    }
+
+    if (identical(char, "(")) {
+      add_token(char, "lparen")
+    } else if (identical(char, ")")) {
+      add_token(char, "rparen")
+    } else if (identical(char, ",")) {
+      add_token(char, "comma")
+    } else {
+      add_token(char, "operator")
+    }
+
+    i <- i + 1
+  }
+
+  if (!length(tokens)) {
+    return("")
+  }
+
+  normalized <- tokens[[1]]
+
+  for (index in 2:length(tokens)) {
+    previous <- tokens[[index - 1]]
+    current <- tokens[[index]]
+    previous_type <- token_types[[index - 1]]
+    current_type <- token_types[[index]]
+
+    previous_can_multiply <- previous_type %in% c("number", "identifier", "rparen")
+    current_can_multiply <- current_type %in% c("number", "identifier", "lparen")
+    is_known_function_call <- previous_type == "identifier" &&
+      current_type == "lparen" &&
+      previous %in% known_math_functions
+
+    if (previous_can_multiply && current_can_multiply && !is_known_function_call) {
+      normalized <- paste0(normalized, "*")
+    }
+
+    normalized <- paste0(normalized, current)
+  }
+
+  normalized
+}
+
 make_user_function <- function(expression_text) {
   expression_text <- trimws(expression_text)
 
@@ -11,8 +129,10 @@ make_user_function <- function(expression_text) {
     stop("Expression is empty.", call. = FALSE)
   }
 
+  normalized_expression <- normalize_user_expression(expression_text)
+
   parsed <- tryCatch(
-    parse(text = expression_text),
+    parse(text = normalized_expression),
     error = function(error) {
       stop(
         paste("R could not parse the expression:", conditionMessage(error)),
@@ -1181,6 +1301,10 @@ ui <- fluidPage(
         line-height: 1.55;
       }
 
+      .conclusion-note p + p {
+        margin-top: 14px;
+      }
+
       /* DT TABLE — CHALK TABLE */
       .dataTables_wrapper {
         font-family: 'Patrick Hand', cursive;
@@ -1685,7 +1809,8 @@ ui <- fluidPage(
           class = "input-note",
           HTML(
             "Use R syntax: 2*x, sin(x), cos(x), exp(x), log(x), sqrt(x), ",
-            "and x<sup>2</sup>. Leave the derivative blank to estimate it automatically."
+            "and x^2. Implied multiplication like 4(x^2) and 11x is also accepted. ",
+            "Leave the derivative blank to estimate it automatically."
           )
         )
       ),
@@ -1742,9 +1867,9 @@ ui <- fluidPage(
                   class = "intro-section",
                   h3("Input Rules"),
                   tags$ul(
-                    tags$li("Write multiplication explicitly: 2*x, not 2x."),
-                    tags$li("Use functions like sin(x), cos(x), exp(x), and log(x)."),
-                    tags$li(HTML("Use powers with ^, such as x<sup>6</sup>."))
+                    tags$li("Type powers with ^, such as x^2, x^3, or x^6."),
+                    tags$li("Use functions like sin(x), cos(x), exp(x), log(x), and sqrt(x)."),
+                    tags$li("Multiplication can be explicit, like 2*x, or implied, like 4(x^2) and 11x.")
                   )
                 ),
                 div(
@@ -1822,6 +1947,12 @@ ui <- fluidPage(
                 "We learned that Newton's Method uses tangent lines to improve an initial estimate and find a root. ",
                 "It can converge quickly when the starting value is close enough, but it can also fail if the derivative ",
                 "is too small or if the initial estimate is poorly chosen."
+              ),
+              p(
+                "This activity helped us see that solving equations is not only about getting the final answer, ",
+                "but also about understanding each step of the process. By testing different functions and starting ",
+                "values, we became more aware of how mathematical methods work in real situations and why checking ",
+                "our results is important."
               )
             )
           )
